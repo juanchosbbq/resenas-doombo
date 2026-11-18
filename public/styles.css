@@ -143,6 +143,9 @@ select:focus, input:focus, textarea:focus { outline: none; border-color: var(--r
 .review-head .right { margin-left: auto; }
 .review-text { margin: var(--space-2) 0 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--tinta); }
 .review-text.empty { color: var(--gris-legal); font-style: italic; }
+.review-tools { margin-top: var(--space-2); display: flex; gap: var(--space-4); flex-wrap: wrap; }
+.review-tools .link-btn { font-size: 15px; color: var(--gris-legal); }
+.review-tools .link-btn:hover { color: var(--rojo-brasa); }
 .reply {
   margin-top: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--rosa-suave);
   border-left: 4px solid var(--negro); white-space: pre-wrap; overflow-wrap: anywhere; font-size: 15px;
