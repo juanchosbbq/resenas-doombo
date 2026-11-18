@@ -276,9 +276,11 @@ document.addEventListener('click', (ev) => {
     const id = t.dataset.suggest;
     return withBusy(t, async () => {
       t.textContent = 'Redactando…';
-      const { draft } = await api(`/api/reviews/${id}/suggest`, { method: 'POST' });
+      const { draft, costUsd } = await api(`/api/reviews/${id}/suggest`, { method: 'POST' });
       document.querySelector(`[data-text="${id}"]`).value = draft;
-      toast('Sugerencia lista. Revísala antes de publicar.');
+      const cost = costUsd == null ? '' : ` · coste estimado ${(costUsd * 100).toLocaleString('es-ES', { maximumFractionDigits: 2 })} cént. $`;
+      toast(`Sugerencia lista. Revísala antes de publicar${cost}.`);
+      document.dispatchEvent(new Event('resenas:ai-used'));
     });
   }
   if (t.dataset.save) {

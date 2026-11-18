@@ -6,6 +6,7 @@ import { putReply } from './google.js';
 import { syncAll } from './sync.js';
 import { AiNotConfiguredError, analyzeComplaints, MAX_TOPIC_REVIEWS, suggestReply } from './ai.js';
 import { compare, monthly, negativeReviews } from './tracking.js';
+import { usageSummary } from './usage.js';
 
 if (HOST !== '127.0.0.1' && HOST !== 'localhost' && !APP_PASSWORD) {
   console.error('Para escuchar fuera de esta máquina hay que definir APP_PASSWORD.');
@@ -143,9 +144,9 @@ app.post(
   '/api/reviews/:id/suggest',
   wrap(async (req, res) => {
     const review = reviewOr404(req.params.id);
-    const text = await suggestReply(review, review, getSettings.get(review.location_id));
+    const { text, costUsd } = await suggestReply(review, review, getSettings.get(review.location_id));
     db.prepare("UPDATE reviews SET draft = ?, draft_source = 'ia' WHERE id = ?").run(text, review.id);
-    res.json({ draft: text });
+    res.json({ draft: text, costUsd });
   }),
 );
 
@@ -238,7 +239,7 @@ app.post(
       return res.status(400).json({ error: `Solo hay ${all.length} reseñas negativas con texto en ese periodo; no da para sacar temas.` });
     }
     const sample = all.slice(0, MAX_TOPIC_REVIEWS);
-    const report = await analyzeComplaints(loc.title || loc.short, sample);
+    const report = await analyzeComplaints(loc, sample);
     const createdAt = new Date().toISOString();
     db.prepare(
       'INSERT INTO topic_reports (location_id, days, analyzed, available, created_at, report) VALUES (?, ?, ?, ?, ?, ?)',
@@ -247,4 +248,6 @@ app.post(
   }),
 );
 
-app.listen(PORT, HOST,() => console.log(`Panel de reseñas en http://${HOST}:${PORT}`));
+app.get('/api/ai-usage', (req, res) => res.json(usageSummary()));
+
+app.listen(PORT, HOST, () => console.log(`Panel de reseñas en http://${HOST}:${PORT}`));
