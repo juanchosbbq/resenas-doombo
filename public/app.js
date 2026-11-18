@@ -126,9 +126,16 @@ function reviewHtml(r) {
       <span class="right">${status}</span>
     </div>
     ${text}
+    <div class="review-tools">
+      <a class="link-btn" href="${REPORT_URL}" target="_blank" rel="noopener noreferrer"
+         title="Abre la herramienta de Google para denunciar reseñas. Solo prospera si la reseña incumple sus políticas (spam, contenido ofensivo, conflicto de intereses, reseña falsa…).">Denunciar a Google ↗</a>
+    </div>
     ${body}
   </article>`;
 }
+
+// Herramienta oficial de Google para denunciar reseñas de una ficha (la API no permite hacerlo).
+const REPORT_URL = 'https://support.google.com/business/workflow/9945796';
 
 function editorHtml(r, value) {
   return `<textarea rows="4" placeholder="Escribe la respuesta o pide una sugerencia" data-text="${r.id}">${esc(value)}</textarea>
