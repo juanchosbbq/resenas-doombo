@@ -43,6 +43,16 @@ db.exec(`
     contact_email TEXT DEFAULT '',
     keywords      TEXT DEFAULT ''
   );
+
+  CREATE TABLE IF NOT EXISTS topic_reports (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    location_id   TEXT NOT NULL REFERENCES locations(id),
+    days          INTEGER NOT NULL,
+    analyzed      INTEGER NOT NULL,          -- reseñas enviadas a la IA
+    available     INTEGER NOT NULL,          -- reseñas negativas con texto en el periodo
+    created_at    TEXT NOT NULL,
+    report        TEXT NOT NULL              -- JSON con resumen y temas
+  );
 `);
 
 const upsertLoc = db.prepare(

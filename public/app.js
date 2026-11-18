@@ -290,6 +290,7 @@ $('#btn-sync').addEventListener('click', (ev) =>
     ev.currentTarget.textContent = 'Actualizando…';
     const { results } = await api('/api/sync', { method: 'POST', body: {} });
     toast(`Actualizado: ${results.map((r) => `${r.location} ${r.read}`).join(' · ')} reseñas revisadas.`);
+    document.dispatchEvent(new Event('resenas:synced'));
     await Promise.all([loadLocations(), loadReviews()]);
   }),
 );

@@ -12,7 +12,15 @@ export const CREDENTIALS_DIR =
   process.env.RESENAS_CREDENTIALS_DIR ||
   path.join(process.env.APPDATA || path.join(os.homedir(), '.config'), 'resenas-doombo');
 
-export const DB_PATH = process.env.DB_PATH || path.join(root, 'data', 'resenas.db');
+// Variables opcionales en %APPDATA%\resenas-doombo\.env (p. ej. ANTHROPIC_API_KEY=...), fuera del repo.
+// No sustituye las variables de entorno que ya existan.
+const envFile = path.join(CREDENTIALS_DIR, '.env');
+export function loadLocalEnv() {
+  if (fs.existsSync(envFile)) process.loadEnvFile(envFile);
+}
+loadLocalEnv();
+
+export const DB_PATH =process.env.DB_PATH || path.join(root, 'data', 'resenas.db');
 export const PUBLIC_DIR = path.join(root, 'public');
 export const PORT = Number(process.env.PORT || 3000);
 // En local solo escucha en esta máquina. En un servidor, HOST=0.0.0.0 y APP_PASSWORD obligatoria.
