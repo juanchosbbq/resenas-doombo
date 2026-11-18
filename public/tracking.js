@@ -47,6 +47,7 @@ function showView() {
   document.querySelectorAll('.tab').forEach((t) => t.setAttribute('aria-current', t.dataset.view === view ? 'page' : 'false'));
   if (view === 'seguimiento' && !state.loaded) loadTracking();
   else if (view === 'seguimiento') renderCharts();
+  if (view === 'seguimiento') loadUsage().catch((e) => toast(e.message, true));
 }
 window.addEventListener('hashchange', showView);
 
@@ -297,7 +298,8 @@ function renderTopics(r) {
   const when = new Date(r.created_at).toLocaleString('es-ES', { dateStyle: 'medium', timeStyle: 'short' });
   $('#topics-meta').textContent =
     `Análisis del ${when} · ${r.days} días · ${r.analyzed} reseñas de 1–3★ con texto` +
-    (r.available > r.analyzed ? ` (las ${r.analyzed} más recientes de ${r.available})` : '');
+    (r.available > r.analyzed ? ` (las ${r.analyzed} más recientes de ${r.available})` : '') +
+    (r.report.costUsd != null ? ` · coste estimado ${usd(r.report.costUsd)}` : '');
   box.innerHTML = `<p class="topics-summary">${esc(r.report.resumen)}</p>
     <ol class="topics">${r.report.temas
       .map(
@@ -312,6 +314,37 @@ function renderTopics(r) {
       )
       .join('')}</ol>`;
 }
+
+// ---------- Gasto de la IA ----------
+const usd = (v) => {
+  if (v == null) return '—';
+  // Por debajo de 10 céntimos se lee mejor en céntimos (p. ej. "1,08 cént. $" en vez de "0,01 $").
+  if (v > 0 && v < 0.1) return `${(v * 100).toLocaleString('es-ES', { maximumFractionDigits: 2 })} cént. $`;
+  return `${v.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} $`;
+};
+
+async function loadUsage() {
+  const u = await api('/api/ai-usage');
+  const tile = (label, value, sub = '') =>
+    `<div class="stat"><span class="stat-label">${label}</span><span class="stat-value">${value}</span>${sub ? `<span class="stat-sub">${sub}</span>` : ''}</div>`;
+  const m = u.month;
+  $('#usage-box').innerHTML = `
+    <div class="stats">
+      ${tile('Este mes', usd(m.cost), `${num(m.replies || 0)} ${m.replies === 1 ? 'respuesta sugerida' : 'respuestas sugeridas'} · ${num(m.analyses || 0)} análisis`)}
+      ${tile('Coste medio por respuesta', usd(u.avgReply), u.avgReply == null ? 'aún sin datos' : '')}
+      ${tile('Coste medio por análisis', usd(u.avgTopics), u.avgTopics == null ? 'aún sin datos' : '')}
+      ${tile('Total desde el inicio', usd(u.total.cost), `${num(u.total.calls)} ${u.total.calls === 1 ? 'llamada' : 'llamadas'} a la IA`)}
+    </div>
+    ${
+      u.byLocation.length
+        ? `<p class="muted">Este mes por local: ${u.byLocation.map((l) => `${esc(l.location || 'Sin local')} ${usd(l.cost)}`).join(' · ')}</p>`
+        : ''
+    }
+    ${u.total.unpriced ? `<p class="muted">${num(u.total.unpriced)} llamadas usaron un modelo sin tarifa conocida y no suman al coste.</p>` : ''}`;
+}
+document.addEventListener('resenas:ai-used', () => {
+  if (!$('#view-seguimiento').hidden) loadUsage().catch(() => {});
+});
 
 // ---------- Carga ----------
 async function selectLocation(id) {
@@ -361,7 +394,8 @@ $('#btn-topics').addEventListener('click', async (ev) => {
   try {
     const r = await api(`/api/tracking/${state.loc}/topics`, { method: 'POST', body: { days: Number($('#t-days').value) } });
     renderTopics(r);
-    toast('Análisis listo.');
+    toast(`Análisis listo · coste estimado ${usd(r.report.costUsd)}.`);
+    loadUsage().catch(() => {});
   } catch (e) {
     toast(e.message, true);
   } finally {

@@ -2,6 +2,7 @@
 // y análisis de los temas de las reseñas negativas de un local.
 import Anthropic from '@anthropic-ai/sdk';
 import { loadLocalEnv } from './config.js';
+import { recordUsage } from './usage.js';
 
 const MODEL = 'claude-opus-5-5';
 const NO_KEY =
@@ -11,7 +12,9 @@ export class AiNotConfiguredError extends Error {}
 
 let client = null;
 
-async function callClaude(params) {
+// Devuelve { text, costUsd }. Cada llamada queda registrada con sus tokens y su coste estimado,
+// también las que acaban en negativa o cortadas, porque Anthropic las cobra igual.
+async function callClaude(params, meta) {
   try {
     if (!client && !process.env.ANTHROPIC_API_KEY) loadLocalEnv(); // por si el archivo se creó con el panel en marcha
     client ??= new Anthropic();
@@ -22,17 +25,19 @@ async function callClaude(params) {
       fallbacks: 'default',
       ...params,
     });
+    const costUsd = recordUsage(meta, response);
     if (response.stop_reason === 'refusal') {
       throw new Error('La IA no ha querido procesar esta petición.');
     }
     if (response.stop_reason === 'max_tokens') {
       throw new Error('La respuesta de la IA se ha cortado; prueba con un periodo más corto.');
     }
-    return response.content
+    const text = response.content
       .filter((b) => b.type === 'text')
       .map((b) => b.text)
       .join('')
       .trim();
+    return { text, costUsd };
   } catch (error) {
     if (error instanceof Anthropic.AuthenticationError || /api.?key|auth/i.test(String(error?.message))) {
       client = null; // al volver a intentarlo se relee la clave
@@ -76,13 +81,16 @@ export async function suggestReply(review, location, settings) {
     `Texto: ${review.comment || '(sin texto)'}`,
   ].join('\n');
 
-  let text = await callClaude({
-    output_config: { effort: 'low' },
-    system: REPLY_SYSTEM,
-    messages: [{ role: 'user', content: `${context}\n\n<resena>\n${reviewText}\n</resena>` }],
-  });
+  let { text, costUsd } = await callClaude(
+    {
+      output_config: { effort: 'low' },
+      system: REPLY_SYSTEM,
+      messages: [{ role: 'user', content: `${context}\n\n<resena>\n${reviewText}\n</resena>` }],
+    },
+    { kind: 'reply', locationId: review.location_id },
+  );
   if (settings.signature) text += `\n\n${settings.signature}`;
-  return text;
+  return { text, costUsd };
 }
 
 // ---------- Temas de las quejas ----------
@@ -121,15 +129,18 @@ const TOPICS_SCHEMA = {
   additionalProperties: false,
 };
 
-export async function analyzeComplaints(locationName, reviews) {
+export async function analyzeComplaints(location, reviews) {
   const list = reviews
     .map((r, i) => `[${i + 1}] ${r.stars}★ · ${r.create_time.slice(0, 10)}\n${r.comment}`)
     .join('\n\n');
-  const text = await callClaude({
-    output_config: { effort: 'medium', format: { type: 'json_schema', schema: TOPICS_SCHEMA } },
-    system: TOPICS_SYSTEM,
-    messages: [{ role: 'user', content: `Local: ${locationName}\n\n<resenas>\n${list}\n</resenas>` }],
-  });
+  const { text, costUsd } = await callClaude(
+    {
+      output_config: { effort: 'medium', format: { type: 'json_schema', schema: TOPICS_SCHEMA } },
+      system: TOPICS_SYSTEM,
+      messages: [{ role: 'user', content: `Local: ${location.title || location.short}\n\n<resenas>\n${list}\n</resenas>` }],
+    },
+    { kind: 'topics', locationId: location.id },
+  );
   const parsed = JSON.parse(text);
 
   // Las citas salen de la base de datos, no del modelo: así son siempre textuales.
@@ -149,5 +160,5 @@ export async function analyzeComplaints(locationName, reviews) {
     })
     .filter((t) => t.cuenta > 0)
     .sort((a, b) => b.cuenta - a.cuenta);
-  return { resumen: parsed.resumen, temas };
+  return { resumen: parsed.resumen, temas, costUsd };
 }

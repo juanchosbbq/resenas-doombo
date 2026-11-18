@@ -260,6 +260,13 @@ blockquote {
 .topic-action { font-size: 15px; }
 .topic blockquote { font-size: 14px; }
 
+.usage-box { border: var(--borde) solid var(--negro); padding: var(--space-4); display: grid; gap: var(--space-3); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-4); }
+.stat { display: grid; gap: 2px; align-content: start; }
+.stat-label { font-family: var(--font-display); font-size: 16px; letter-spacing: .08em; text-transform: uppercase; color: var(--rojo-brasa); }
+.stat-value { font-family: var(--font-display); font-size: 44px; line-height: .95; color: var(--negro); }
+.stat-sub { font-size: 13px; color: var(--gris-legal); }
+
 @media (max-width: 600px) {
   .tab { font-size: 22px; }
   h1 { font-size: 44px; }
