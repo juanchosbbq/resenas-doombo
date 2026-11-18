@@ -41,6 +41,18 @@ Lo más importante es la **gestión de las reseñas**:
     Valladolid, Mercado San Leopoldo y Chamberí.
   - Ojo: Google marca el proyecto con "Revísalo y bórralo" porque lleva meses sin uso. **No
     borrarlo**: perderíamos el acceso aprobado.
+  - **Conexión probada el 18/11/2026** con `scripts/prueba-google.ps1`: lee las reseñas de los
+    cuatro locales. El JSON del cliente y el token se guardan en `%APPDATA%\resenas-doombo\`, nunca
+    en el repo. Lo que se aprendió:
+    - Cadena de llamadas: Account Management (`/v1/accounts`, una cuenta "Juancho's BBQ" con 10
+      fichas) → Business Information (`/v1/{cuenta}/locations?readMask=name,title`) → My Business v4
+      (`/v4/{cuenta}/{ficha}/reviews`, con nota media, total y reseñas con `reviewReply`).
+    - Las reseñas en otro idioma llegan como "(Translated by Google) … (Original) …": hay que
+      quedarse con el texto original.
+    - Ficha y nota media de cada local: Valladolid `locations/5006375506636261585` (4,0);
+      San Leopoldo `locations/3499382858896337193` (3,9); Chamberí `locations/8173102675125879325`
+      (4,5); Las Tablas `locations/1937894466674942835` (4,6).
+    - Varias reseñas recientes están sin responder en los cuatro locales.
 
 ## Siguiente paso
 Recorrer Joombo con la sesión iniciada (en el navegador de la persona) y anotar en
