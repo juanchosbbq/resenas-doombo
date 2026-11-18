@@ -28,8 +28,19 @@ Lo más importante es la **gestión de las reseñas**:
   persona en su propio navegador.
 - Google no indica desde qué QR llega una reseña: los escaneos se cuentan con certeza, la
   atribución de reseñas es aproximada y hay que decirlo así en la interfaz.
-- Leer reseñas y responderlas requiere la API de Google Business Profile, que hay que solicitar
-  a Google con la cuenta que gestiona los locales.
+- Leer reseñas y responderlas requiere la API de Google Business Profile. **Ya la tenemos**
+  (comprobado el 18/11/2026), del proyecto anterior de reseñas:
+  - Proyecto de Google Cloud `juanchos-resenas`, en la cuenta de Google del equipo, que es la
+    misma que gestiona las fichas de Business Profile.
+  - APIs activadas: Google My Business API (la v4 privada, con la que se leen y responden reseñas),
+    Account Management, Business Information, Notifications, Q&A y Performance. Tienen cuota real
+    (p. ej. 600 peticiones/min), así que Google ya aprobó el acceso.
+  - Credenciales: un cliente OAuth de tipo escritorio ("Desktop Juancho's Reseñas"). No hay claves
+    de API ni cuentas de servicio. El secreto del cliente nunca va al repo.
+  - Esa cuenta gestiona las 10 fichas verificadas, incluidas las cuatro del piloto: Las Tablas,
+    Valladolid, Mercado San Leopoldo y Chamberí.
+  - Ojo: Google marca el proyecto con "Revísalo y bórralo" porque lleva meses sin uso. **No
+    borrarlo**: perderíamos el acceso aprobado.
 
 ## Siguiente paso
 Recorrer Joombo con la sesión iniciada (en el navegador de la persona) y anotar en
