@@ -4,7 +4,8 @@ import { db } from './db.js';
 import { APP_PASSWORD, HOST, PORT, PUBLIC_DIR } from './config.js';
 import { putReply } from './google.js';
 import { syncAll } from './sync.js';
-import { AiNotConfiguredError, suggestReply } from './ai.js';
+import { AiNotConfiguredError, analyzeComplaints, MAX_TOPIC_REVIEWS, suggestReply } from './ai.js';
+import { compare, monthly, negativeReviews } from './tracking.js';
 
 if (HOST !== '127.0.0.1' && HOST !== 'localhost' && !APP_PASSWORD) {
   console.error('Para escuchar fuera de esta máquina hay que definir APP_PASSWORD.');
@@ -194,4 +195,56 @@ app.put('/api/settings/:loc', (req, res) => {
   res.json(getSettings.get(req.params.loc));
 });
 
-app.listen(PORT, HOST, () => console.log(`Panel de reseñas en http://${HOST}:${PORT}`));
+// ---------- Seguimiento por local ----------
+const locationExists = db.prepare('SELECT id, short, title FROM locations WHERE id = ?');
+function locationOr404(id) {
+  const loc = locationExists.get(id);
+  if (!loc) throw Object.assign(new Error('Local no encontrado'), { status: 404 });
+  return loc;
+}
+
+app.get('/api/tracking/compare', (req, res) => res.json(compare()));
+
+app.get(
+  '/api/tracking/:loc/monthly',
+  wrap(async (req, res) => {
+    locationOr404(req.params.loc);
+    const months = Math.min(36, Math.max(3, Number(req.query.months) || 12));
+    res.json(monthly(req.params.loc, months));
+  }),
+);
+
+const latestReport = db.prepare(
+  'SELECT days, analyzed, available, created_at, report FROM topic_reports WHERE location_id = ? ORDER BY id DESC LIMIT 1',
+);
+
+app.get(
+  '/api/tracking/:loc/topics',
+  wrap(async (req, res) => {
+    locationOr404(req.params.loc);
+    const row = latestReport.get(req.params.loc);
+    res.json(row ? { ...row, report: JSON.parse(row.report) } : null);
+  }),
+);
+
+// Lanza un análisis nuevo con la IA (cuesta dinero: solo cuando la persona lo pide).
+app.post(
+  '/api/tracking/:loc/topics',
+  wrap(async (req, res) => {
+    const loc = locationOr404(req.params.loc);
+    const days = [30, 90, 180, 365].includes(Number(req.body?.days)) ? Number(req.body.days) : 90;
+    const all = negativeReviews(loc.id, days);
+    if (all.length < 3) {
+      return res.status(400).json({ error: `Solo hay ${all.length} reseñas negativas con texto en ese periodo; no da para sacar temas.` });
+    }
+    const sample = all.slice(0, MAX_TOPIC_REVIEWS);
+    const report = await analyzeComplaints(loc.title || loc.short, sample);
+    const createdAt = new Date().toISOString();
+    db.prepare(
+      'INSERT INTO topic_reports (location_id, days, analyzed, available, created_at, report) VALUES (?, ?, ?, ?, ?, ?)',
+    ).run(loc.id, days, sample.length, all.length, createdAt, JSON.stringify(report));
+    res.json({ days, analyzed: sample.length, available: all.length, created_at: createdAt, report });
+  }),
+);
+
+app.listen(PORT, HOST,() => console.log(`Panel de reseñas en http://${HOST}:${PORT}`));

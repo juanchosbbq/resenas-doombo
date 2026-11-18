@@ -17,10 +17,11 @@ motivando al equipo. Según su web pública:
 Lo más importante es la **gestión de las reseñas**:
 
 1. Ver las reseñas de Google de los cuatro locales en un panel, filtrar por local y nota, y
-   responderlas (con respuesta sugerida que una persona revisa).
-2. Atribuir reseñas a empleados (QR por empleado; cruce por hora o por nombre del cliente).
-3. Motivación: objetivos, ranking, puntos y recompensas.
-4. Comparativa entre locales.
+   responderlas (con respuesta sugerida que una persona revisa). **Hecho** (panel, noviembre 2026).
+2. **Seguimiento y comparativa por local**: evolución de nota y volumen, ritmo de respuesta,
+   pendientes y temas de las quejas. Desde el 18/11/2026 va por delante de la parte de empleados.
+3. Atribuir reseñas a empleados (QR por empleado; cruce por hora o por nombre del cliente).
+4. Motivación: objetivos, ranking, puntos y recompensas.
 
 ## Reglas
 - Funciones propias: no copiar el diseño, los textos, el nombre ni el código de Joombo.

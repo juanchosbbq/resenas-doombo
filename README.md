@@ -25,6 +25,10 @@ Qué hace:
 - Respuesta a cada reseña: escribirla a mano o pedir una **sugerencia a la IA** (Claude), guardarla como
   borrador y **publicarla en Google solo tras confirmarlo**. La IA nunca publica sola.
 - Ajustes de respuesta por local: indicaciones para la IA, correo de contacto, palabras clave y firma.
+- **Seguimiento** (pestaña de la cabecera): comparativa de los cuatro locales en los últimos 30 días
+  (reseñas frente al mes anterior, media, 1–3★, % respondidas, tiempo de respuesta y pendientes), evolución
+  mes a mes de cada local (reseñas, nota media y % respondidas) y análisis con IA de los temas de las
+  reseñas negativas de un periodo, con sugerencias para el encargado y citas textuales.
 
 ### Arrancarlo en este ordenador
 
@@ -33,8 +37,9 @@ Requisitos: Node.js 24 o superior.
 1. Credenciales de Google en `%APPDATA%\resenas-doombo\`: el `client_secret.json` del cliente OAuth de
    escritorio del proyecto `juanchos-resenas`, y el `token.json`, que se crea solo la primera vez que
    ejecutas `scripts\prueba-google.ps1` e inicias sesión con la cuenta que gestiona las fichas.
-2. Para las sugerencias de la IA, una clave de Anthropic en la variable `ANTHROPIC_API_KEY`. Sin ella
-   el panel funciona igual, pero el botón "Sugerir respuesta" avisa de que falta.
+2. Para las funciones con IA (sugerir respuesta y analizar quejas), una clave de Anthropic: crea el
+   archivo `%APPDATA%\resenas-doombo\.env` con la línea `ANTHROPIC_API_KEY=tu-clave` (o define esa
+   variable de entorno). No hace falta reiniciar el panel. Sin clave, todo lo demás funciona igual.
 3. Instalar y arrancar:
 
    ```powershell

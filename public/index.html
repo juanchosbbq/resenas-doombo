@@ -24,10 +24,67 @@
         <p class="muted" id="sync-info">—</p>
       </div>
     </div>
+    <nav class="tabs" aria-label="Secciones">
+      <a href="#resenas" class="tab" data-view="resenas">Reseñas</a>
+      <a href="#seguimiento" class="tab" data-view="seguimiento">Seguimiento</a>
+    </nav>
     <div class="grill" aria-hidden="true"></div>
   </header>
 
-  <main>
+  <main id="view-seguimiento" hidden>
+    <div class="section-title">
+      <p class="kicker">Comparativa · últimos 30 días</p>
+    </div>
+    <div class="table-wrap">
+      <table class="data-table" id="compare-table"></table>
+    </div>
+    <p class="muted note-line">Pulsa un local para ver su evolución. El tiempo de respuesta es aproximado: Google da la fecha de la última edición de la respuesta.</p>
+
+    <div class="section-title section-gap">
+      <p class="kicker">Evolución · últimos 12 meses</p>
+    </div>
+    <div class="filter-group" id="t-loc" role="group" aria-label="Local"></div>
+    <div class="charts">
+      <figure class="chart-card">
+        <figcaption><span class="chart-title">Reseñas al mes</span>
+          <span class="legend"><span class="key key-neg"></span>1–3★ <span class="key key-pos"></span>4–5★</span></figcaption>
+        <div class="chart" id="chart-volume"></div>
+      </figure>
+      <figure class="chart-card">
+        <figcaption><span class="chart-title">Nota media de las reseñas del mes</span></figcaption>
+        <div class="chart" id="chart-rating"></div>
+      </figure>
+      <figure class="chart-card">
+        <figcaption><span class="chart-title">Reseñas respondidas (%)</span></figcaption>
+        <div class="chart" id="chart-replies"></div>
+      </figure>
+    </div>
+    <details class="data-details">
+      <summary>Ver los datos en tabla</summary>
+      <div class="table-wrap"><table class="data-table" id="monthly-table"></table></div>
+    </details>
+
+    <div class="section-title section-gap">
+      <p class="kicker">De qué se quejan los clientes</p>
+    </div>
+    <div class="topics-box">
+      <div class="filter-row">
+        <label>Periodo
+          <select id="t-days">
+            <option value="30">Últimos 30 días</option>
+            <option value="90" selected>Últimos 90 días</option>
+            <option value="180">Últimos 6 meses</option>
+            <option value="365">Último año</option>
+          </select>
+        </label>
+        <button class="btn btn-primary" id="btn-topics">Analizar quejas con IA</button>
+        <span class="muted" id="topics-meta"></span>
+      </div>
+      <div id="topics-result"></div>
+    </div>
+  </main>
+
+  <main id="view-resenas">
     <div class="section-title"><p class="kicker">Locales</p></div>
     <section class="cards" id="loc-cards" aria-label="Resumen por local"></section>
     <div class="section-title"><p class="kicker">Reseñas</p></div>
@@ -121,6 +178,9 @@
 
   <div class="toast" id="toast" role="status" hidden></div>
 
+  <div class="chart-tip" id="chart-tip" role="tooltip" hidden></div>
+
   <script src="app.js" type="module"></script>
+  <script src="tracking.js" type="module"></script>
 </body>
 </html>
