@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reseñas · Juancho's BBQ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Public+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <img src="img/juanchos-logo-blanco.png" alt="Juancho's BBQ">
+        <div>
+          <p class="kicker">Panel del piloto</p>
+          <h1>Reseñas</h1>
+        </div>
+      </div>
+      <div>
+        <button id="btn-sync" class="btn btn-inverse">Actualizar desde Google</button>
+        <p class="muted" id="sync-info">—</p>
+      </div>
+    </div>
+    <div class="grill" aria-hidden="true"></div>
+  </header>
+
+  <main>
+    <div class="section-title"><p class="kicker">Locales</p></div>
+    <section class="cards" id="loc-cards" aria-label="Resumen por local"></section>
+    <div class="section-title"><p class="kicker">Reseñas</p></div>
+
+    <section class="filters" aria-label="Filtros">
+      <div class="filter-group" id="f-loc" role="group" aria-label="Local"></div>
+
+      <div class="filter-row">
+        <label>Periodo
+          <select id="f-period">
+            <option value="all">Todo</option>
+            <option value="7">Últimos 7 días</option>
+            <option value="30" selected>Últimos 30 días</option>
+            <option value="90">Últimos 90 días</option>
+            <option value="month">Este mes</option>
+            <option value="custom">Fechas…</option>
+          </select>
+        </label>
+        <span id="custom-dates" hidden>
+          <input type="date" id="f-from" aria-label="Desde">
+          <input type="date" id="f-to" aria-label="Hasta">
+        </span>
+
+        <label>Estado
+          <select id="f-replied">
+            <option value="">Todas</option>
+            <option value="no">Sin responder</option>
+            <option value="yes">Respondidas</option>
+          </select>
+        </label>
+
+        <label>Texto
+          <select id="f-text">
+            <option value="">Con y sin texto</option>
+            <option value="yes">Con texto</option>
+            <option value="no">Sin texto</option>
+          </select>
+        </label>
+
+        <label class="grow">Buscar
+          <input type="search" id="f-q" placeholder="Palabra, autor o respuesta">
+        </label>
+      </div>
+
+      <div class="filter-row">
+        <div class="filter-group" id="f-stars" role="group" aria-label="Estrellas"></div>
+        <span class="spacer"></span>
+        <span class="muted" id="result-count"></span>
+        <a class="btn btn-ghost" id="btn-csv" href="#">Exportar CSV</a>
+      </div>
+    </section>
+
+    <section id="review-list" aria-live="polite"></section>
+    <nav class="pager" id="pager" aria-label="Páginas"></nav>
+  </main>
+
+  <dialog id="dlg-publish">
+    <form method="dialog">
+      <h2>¿Publicar esta respuesta en Google?</h2>
+      <p class="muted" id="publish-target"></p>
+      <blockquote id="publish-text"></blockquote>
+      <p class="muted">Será visible para cualquiera en la ficha del local. Se puede editar después, pero no deshacer la publicación.</p>
+      <div class="dlg-actions">
+        <button value="cancel" class="btn btn-ghost">Cancelar</button>
+        <button value="ok" class="btn btn-primary">Publicar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlg-settings">
+    <form method="dialog" id="settings-form">
+      <h2>Ajustes de respuesta · <span id="settings-loc"></span></h2>
+      <label>Indicaciones para la IA
+        <textarea name="instructions" rows="4" placeholder="Ej.: tutear, mencionar que estamos en el mercado, no prometer descuentos…"></textarea>
+      </label>
+      <label>Correo de contacto para reseñas negativas
+        <input name="contact_email" type="email" placeholder="atencion@…">
+      </label>
+      <label>Palabras clave (separadas por comas)
+        <input name="keywords" placeholder="hamburguesas, barbacoa, Las Tablas…">
+      </label>
+      <label>Firma (se añade al final)
+        <input name="signature" placeholder="— El equipo de …">
+      </label>
+      <div class="dlg-actions">
+        <button value="cancel" class="btn btn-ghost">Cancelar</button>
+        <button value="ok" class="btn btn-primary">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>
