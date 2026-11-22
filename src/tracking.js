@@ -37,39 +37,41 @@ const byLocationSince = db.prepare(
   'SELECT stars, reply, reply_time, create_time FROM reviews WHERE location_id = ? AND create_time >= ?',
 );
 
-export function compare() {
-  const now = Date.now();
-  const iso = (days) => new Date(now - days * DAY).toISOString();
+const byLocationBetween = db.prepare(
+  'SELECT stars, reply, reply_time, create_time FROM reviews WHERE location_id = ? AND create_time >= ? AND create_time < ?',
+);
+
+// Comparativa entre locales en un periodo [from, to) (instantes ISO) frente a un periodo anterior.
+// El navegador puede mandar el periodo anterior (p. ej. el mes anterior); si no, se usa el de la
+// misma duración justo antes. Sin `from` ("Todo") no hay periodo anterior.
+export function compare(from, to, prevFrom, prevTo) {
+  const end = to ? Date.parse(to) : Date.now();
+  const start = from ? Date.parse(from) : null;
+  const toIso = new Date(end).toISOString();
+  const fromIso = start != null ? new Date(start).toISOString() : '0000';
+  let prev = null;
+  if (start != null && prevFrom && prevTo) prev = { from: prevFrom, to: prevTo };
+  else if (start != null) prev = { from: new Date(start - (end - start)).toISOString(), to: fromIso };
+
   const locations = db.prepare('SELECT id, short, average, total, last_sync FROM locations ORDER BY short').all();
-  return locations.map((l) => {
-    const d30 = summarize(byLocationSince.all(l.id, iso(30)));
-    const d90 = summarize(byLocationSince.all(l.id, iso(90)));
-    const prev30 = summarize(
-      db
-        .prepare(
-          'SELECT stars, reply, reply_time, create_time FROM reviews WHERE location_id = ? AND create_time >= ? AND create_time < ?',
-        )
-        .all(l.id, iso(60), iso(30)),
-    );
-    const pending = db
-      .prepare(
-        `SELECT COUNT(*) AS total, SUM(stars <= 3) AS low FROM reviews WHERE location_id = ? AND reply IS NULL`,
-      )
-      .get(l.id);
+  const pendingStmt = db.prepare(
+    'SELECT COUNT(*) AS total, SUM(stars <= 3) AS low FROM reviews WHERE location_id = ? AND reply IS NULL',
+  );
+  const rows = locations.map((l) => {
+    const pending = pendingStmt.get(l.id);
     return {
       id: l.id,
       short: l.short,
       googleAverage: l.average,
       googleTotal: l.total,
-      d30,
-      prev30,
-      d90,
+      period: summarize(byLocationBetween.all(l.id, fromIso, toIso)),
+      prev: prev ? summarize(byLocationBetween.all(l.id, prev.from, prev.to)) : null,
       pending: pending.total,
       pendingLow: pending.low ?? 0,
     };
   });
+  return { range: { from: start != null ? fromIso : null, to: toIso, prev }, locations: rows };
 }
-
 export function monthly(locationId, months = 12) {
   const start = new Date();
   start.setUTCDate(1);

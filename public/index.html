@@ -33,12 +33,13 @@
 
   <main id="view-seguimiento" hidden>
     <div class="section-title">
-      <p class="kicker">Comparativa · últimos 30 días</p>
+      <p class="kicker" id="compare-kicker">Comparativa · Últimos 30 días</p>
     </div>
+    <div class="filter-row compare-dates"><div id="c-dates"></div></div>
     <div class="table-wrap">
       <table class="data-table" id="compare-table"></table>
     </div>
-    <p class="muted note-line">Pulsa un local para ver su evolución. El tiempo de respuesta es aproximado: Google da la fecha de la última edición de la respuesta.</p>
+    <p class="muted note-line"><span id="compare-prev"></span> Pulsa un local para ver su evolución. El tiempo de respuesta es aproximado: Google da la fecha de la última edición de la respuesta. Las columnas de «sin responder» cuentan todo el histórico.</p>
 
     <div class="section-title section-gap">
       <p class="kicker">Evolución · últimos 12 meses</p>
@@ -99,20 +100,7 @@
       <div class="filter-group" id="f-loc" role="group" aria-label="Local"></div>
 
       <div class="filter-row">
-        <label>Periodo
-          <select id="f-period">
-            <option value="all">Todo</option>
-            <option value="7">Últimos 7 días</option>
-            <option value="30" selected>Últimos 30 días</option>
-            <option value="90">Últimos 90 días</option>
-            <option value="month">Este mes</option>
-            <option value="custom">Fechas…</option>
-          </select>
-        </label>
-        <span id="custom-dates" hidden>
-          <input type="date" id="f-from" aria-label="Desde">
-          <input type="date" id="f-to" aria-label="Hasta">
-        </span>
+        <div id="f-dates"></div>
 
         <label>Estado
           <select id="f-replied">
