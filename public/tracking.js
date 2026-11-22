@@ -1,4 +1,6 @@
 // Vista "Seguimiento": comparativa entre locales, evolución mensual y temas de las quejas.
+import { mountDateRange } from './daterange.js';
+
 const $ = (s) => document.querySelector(s);
 const esc = (s) =>
   String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -52,24 +54,50 @@ function showView() {
 window.addEventListener('hashchange', showView);
 
 // ---------- Comparativa ----------
+const compareDates = mountDateRange($('#c-dates'), {
+  preset: '30',
+  onChange: () => loadCompare().catch((e) => toast(e.message, true)),
+});
+
 function delta(now, before) {
   if (!before) return '';
-  const d = now - before;
-  if (d === 0) return '<span class="delta">igual que los 30 días anteriores</span>';
-  return `<span class="delta">${d > 0 ? '+' : '−'}${num(Math.abs(d))} vs 30 días anteriores</span>`;
+  const d = now - before.count;
+  if (d === 0) return '<span class="delta">igual que el periodo anterior</span>';
+  return `<span class="delta">${d > 0 ? '+' : '−'}${num(Math.abs(d))} vs periodo anterior</span>`;
+}
+
+async function loadCompare() {
+  const { from, to, prevFrom, prevTo, label } = compareDates.range();
+  const q = new URLSearchParams();
+  if (from) q.set('from', from);
+  if (to) q.set('to', to);
+  if (prevFrom && prevTo) {
+    q.set('prevFrom', prevFrom);
+    q.set('prevTo', prevTo);
+  }
+  const data = await api(`/api/tracking/compare?${q}`);
+  state.compare = data.locations;
+  state.compareRange = data.range;
+  $('#compare-kicker').textContent = `Comparativa · ${label}`;
+  renderCompare();
 }
 
 function renderCompare() {
+  const prev = state.compareRange?.prev;
+  const prevNote = prev
+    ? `Se compara con el periodo del ${new Date(prev.from).toLocaleDateString('es-ES')} al ${new Date(Date.parse(prev.to) - 1).toLocaleDateString('es-ES')}.`
+    : '';
+  $('#compare-prev').textContent = prevNote;
   const rows = state.compare
     .map(
       (l) => `<tr data-loc="${l.id}" class="${l.id === state.loc ? 'is-selected' : ''}" tabindex="0">
         <th scope="row">${esc(l.short)}</th>
         <td class="n big">${num(l.googleAverage, 1)}</td>
-        <td class="n">${num(l.d30.count)}${delta(l.d30.count, l.prev30.count)}</td>
-        <td class="n">${num(l.d30.avg, 2)}</td>
-        <td class="n">${num(l.d30.neg)}</td>
-        <td class="n">${pct(l.d30.replyRate)}</td>
-        <td class="n">${hours(l.d30.medianHours)}</td>
+        <td class="n">${num(l.period.count)}${delta(l.period.count, l.prev)}</td>
+        <td class="n">${num(l.period.avg, 2)}</td>
+        <td class="n">${num(l.period.neg)}</td>
+        <td class="n">${pct(l.period.replyRate)}</td>
+        <td class="n">${hours(l.period.medianHours)}</td>
         <td class="n">${l.pending ? `<span class="pill ${l.pendingLow ? 'pill-bad' : 'pill-warn'}">${num(l.pending)}</span>` : '<span class="pill pill-good">0</span>'}</td>
         <td class="n">${num(l.pendingLow)}</td>
       </tr>`,
@@ -362,7 +390,7 @@ async function selectLocation(id) {
 
 async function loadTracking() {
   try {
-    state.compare = await api('/api/tracking/compare');
+    await loadCompare();
     state.loaded = true;
     // Por defecto, el local con más reseñas negativas sin responder.
     const first = [...state.compare].sort((a, b) => b.pendingLow - a.pendingLow)[0];

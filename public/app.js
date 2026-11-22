@@ -1,4 +1,6 @@
 // Panel de reseñas: interfaz en JavaScript sin framework.
+import { mountDateRange } from './daterange.js';
+
 const $ = (sel) => document.querySelector(sel);
 const state = {
   locations: [],
@@ -35,23 +37,13 @@ function toast(msg, isError = false) {
 }
 
 // ---------- Filtros ----------
-function dateRange() {
-  const p = $('#f-period').value;
-  const today = new Date();
-  const iso = (d) => d.toISOString().slice(0, 10);
-  if (p === 'all') return {};
-  if (p === 'custom') return { from: $('#f-from').value, to: $('#f-to').value };
-  if (p === 'month') return { from: iso(new Date(today.getFullYear(), today.getMonth(), 1)) };
-  const from = new Date(today);
-  from.setDate(from.getDate() - Number(p));
-  return { from: iso(from) };
-}
+const dates = mountDateRange($('#f-dates'), { preset: '30', onChange: () => refresh() });
 
 function queryString(extra = {}) {
   const q = new URLSearchParams();
   if (state.loc.size) q.set('loc', [...state.loc].join(','));
   if (state.stars.size) q.set('stars', [...state.stars].join(','));
-  const { from, to } = dateRange();
+  const { from, to } = dates.range();
   if (from) q.set('from', from);
   if (to) q.set('to', to);
   for (const id of ['replied', 'text', 'q']) {
@@ -154,7 +146,7 @@ async function loadReviews() {
   try {
     const data = await api(`/api/reviews?${queryString({ page: state.page })}`);
     currentReviews = data.reviews;
-    $('#result-count').textContent = `${fmtNum(data.total)} reseñas`;
+    $('#result-count').textContent = `${fmtNum(data.total)} ${data.total === 1 ? 'reseña' : 'reseñas'}`;
     list.innerHTML = data.reviews.length
       ? data.reviews.map(reviewHtml).join('')
       : '<div class="empty-state">No hay reseñas con estos filtros.</div>';
@@ -309,11 +301,7 @@ $('#btn-csv').addEventListener('click', (ev) => {
   window.location.href = `/api/reviews.csv?${queryString()}`;
 });
 
-$('#f-period').addEventListener('change', () => {
-  $('#custom-dates').hidden = $('#f-period').value !== 'custom';
-  refresh();
-});
-for (const id of ['#f-from', '#f-to', '#f-replied', '#f-text']) $(id).addEventListener('change', refresh);
+for (const id of ['#f-replied', '#f-text']) $(id).addEventListener('change', refresh);
 let searchTimer;
 $('#f-q').addEventListener('input', () => {
   clearTimeout(searchTimer);

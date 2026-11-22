@@ -36,6 +36,17 @@ const wrap = (fn) => (req, res) =>
   });
 
 // ---------- Filtros comunes a la lista y al CSV ----------
+// Convierte un parámetro de fecha en instante ISO. Una fecha sin hora (YYYY-MM-DD) se toma en UTC;
+// con `addDays` = 1 se usa el inicio del día siguiente (límite superior excluido).
+function toInstant(value, addDays = 0) {
+  if (!value) return null;
+  const s = String(value);
+  const d = /^\d{4}-\d{2}-\d{2}$/.test(s) ? new Date(`${s}T00:00:00Z`) : new Date(s);
+  if (Number.isNaN(d.getTime())) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) d.setUTCDate(d.getUTCDate() + addDays);
+  return d.toISOString();
+}
+
 function buildFilter(q) {
   const where = [];
   const params = [];
@@ -51,13 +62,17 @@ function buildFilter(q) {
     where.push(`r.stars IN (${stars.map(() => '?').join(',')})`);
     params.push(...stars);
   }
-  if (q.from) {
+  // `from` incluido y `to` excluido, como instantes ISO que calcula el navegador en hora local
+  // (p. ej. del 1 nov 00:00 de Madrid al 23 nov 00:00). Se admite también una fecha suelta (UTC).
+  const from = toInstant(q.from, 0);
+  const to = toInstant(q.to, 1);
+  if (from) {
     where.push('r.create_time >= ?');
-    params.push(`${q.from}T00:00:00Z`);
+    params.push(from);
   }
-  if (q.to) {
-    where.push('r.create_time <= ?');
-    params.push(`${q.to}T23:59:59Z`);
+  if (to) {
+    where.push('r.create_time < ?');
+    params.push(to);
   }
   if (q.replied === 'yes') where.push('r.reply IS NOT NULL');
   if (q.replied === 'no') where.push('r.reply IS NULL');
@@ -204,7 +219,17 @@ function locationOr404(id) {
   return loc;
 }
 
-app.get('/api/tracking/compare', (req, res) => res.json(compare()));
+// Sin `from` ni `to` compara todo el histórico (el navegador manda siempre el periodo elegido).
+app.get('/api/tracking/compare', (req, res) =>
+  res.json(
+    compare(
+      toInstant(req.query.from, 0),
+      toInstant(req.query.to, 1),
+      toInstant(req.query.prevFrom, 0),
+      toInstant(req.query.prevTo, 1),
+    ),
+  ),
+);
 
 app.get(
   '/api/tracking/:loc/monthly',
